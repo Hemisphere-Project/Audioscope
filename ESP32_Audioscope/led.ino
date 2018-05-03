@@ -1,10 +1,18 @@
-#define CYCLE 40
+#define CYCLE 41
 #define CYCLE_ON 1
 
 bool led_blink = false;
 
 void led_setup() {
-  xTaskCreate(&blinky, "blinky", 512, NULL, 2, NULL );
+  //xTaskCreate(&blinky, "blinky", 512, NULL, 2, NULL );
+  xTaskCreatePinnedToCore(
+    blinky,   /* Function to implement the task */
+    "blinky", /* Name of the task */
+    512,      /* Stack size in words */
+    NULL,       /* Task input parameter */
+    2,          /* Priority of the task */
+    NULL,       /* Task handle. */
+    0);  /* Core where the task should run */
 }
 
 void blinky(void *pvParameter)
