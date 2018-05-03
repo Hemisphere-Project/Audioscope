@@ -1,4 +1,4 @@
-#define DEBUG
+//#define DEBUG
 
 #ifdef DEBUG
  #define LOGSETUP()     Serial.begin(115200)
@@ -11,7 +11,7 @@
  #define LOG(x)         Serial.println (x)
 #else
  #define LOGSETUP()     
- #define LOGINLINE(x)   
+ #define LOGINL(x)   
  #define LOGDEC(x)
  #define LOGF(x, y)
  #define LOGF2(x, y1, y2)

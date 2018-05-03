@@ -14,9 +14,9 @@ void nfc_setup() {
   xTaskCreatePinnedToCore(
     nfc_task,   /* Function to implement the task */
     "nfcy", /* Name of the task */
-    10000,      /* Stack size in words */
+    20000,      /* Stack size in words */
     NULL,       /* Task input parameter */
-    0,          /* Priority of the task */
+    1,          /* Priority of the task */
     NULL,       /* Task handle. */
     0);  /* Core where the task should run */
 }
@@ -37,13 +37,14 @@ void nfc_task(void *pvParameter)
   nfc.SAMConfig();
 
   nfc_run = true;
+  LOG("NFC ready");
 
   while (!nfc_err) {
-    yield();
-    vTaskDelay(10);
-    while (nfc_didread) vTaskDelay(10);
-    bool success = nfc.readPassiveTargetID(PN532_MIFARE_ISO14443A, &nfc_uid[0], &nfc_uidLength, 100);
+    delay(10);
+    while (nfc_didread) delay(10);
+    bool success = nfc.readPassiveTargetID(PN532_MIFARE_ISO14443A, &nfc_uid[0], &nfc_uidLength, 200);
     if (success) nfc_didread = true;
+    if (success) LOG("NFC ping");
   }
   vTaskDelete( NULL );
 }

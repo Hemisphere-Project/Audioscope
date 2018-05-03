@@ -4,7 +4,7 @@
 bool led_blink = false;
 
 void led_setup() {
-  xTaskCreate(&blinky, "blinky", 512, NULL, 3, NULL );
+  xTaskCreate(&blinky, "blinky", 512, NULL, 2, NULL );
 }
 
 void blinky(void *pvParameter)
@@ -12,7 +12,7 @@ void blinky(void *pvParameter)
   // Led PWM
   pinMode(4, OUTPUT);
   digitalWrite(4, 0);
-  while (1) {
+  while (true) { 
     if (led_blink) {
       digitalWrite(4, HIGH);
       delay(CYCLE_ON);
@@ -24,6 +24,7 @@ void blinky(void *pvParameter)
       delay(CYCLE);
     }
   }
+  vTaskDelete( NULL );
 }
 
 void led_start(){

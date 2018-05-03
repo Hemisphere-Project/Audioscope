@@ -7,6 +7,7 @@ byte wifi_retry = 0;
 byte wifi_otaEnable = false;
 String wifi_nameDevice = "esp32";
 void (*wifi_conClbck)();
+byte wifi_maxRetry = 0;
 
 /*
  * Setup OTA
@@ -77,7 +78,7 @@ bool wifi_isok() {
  */
 void _wifi_connected() {
   _wifi_otabegin();
-  (*wifi_conClbck)();
+  //(*wifi_conClbck)();
 }
 
 /*
@@ -96,8 +97,13 @@ void _wifi_event(WiFiEvent_t event) {
     wifi_available = false;
     _wifi_disconnected();
     wifi_retry += 1;
-    LOGF("WIFI: reconnecting.. %i\n", wifi_retry);
-    WiFi.reconnect();
+
+    // Check max retry
+    if (wifi_maxRetry > 0 && wifi_retry > wifi_maxRetry) wifi_stop();
+    else {
+      LOGF("WIFI: reconnecting.. %i\n", wifi_retry);
+      WiFi.reconnect();
+    }
   }
   else if (event == SYSTEM_EVENT_STA_GOT_IP) {
     wifi_retry = 0;
@@ -135,4 +141,19 @@ void wifi_wait(int timeout, bool restart) {
   else LOG("WIFI: timeout is over");
 }
 
+/*
+ * Disable wifi if no conn after x
+ */
+void wifi_maxTry(byte maxT) {
+  wifi_maxRetry = maxT;
+}
+
+/*
+ * Disable wifi
+ */
+void wifi_stop() {
+  LOG("Stopping wifi...");
+  WiFi.mode(WIFI_OFF);
+  //btStop();
+}
 
