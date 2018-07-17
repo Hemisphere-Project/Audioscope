@@ -4,6 +4,7 @@
 #define MP_VERSION  0.50   // remove OSC, disable wifi after 15s
 #define MP_VERSION  0.51   // timeout RFID in ms instead of counter
 #define MP_VERSION  0.52   // pin led task to CPU0
+#define MP_VERSION  0.53   // pin led task to ISR
 
 #define PIN_MOTOR 15
 

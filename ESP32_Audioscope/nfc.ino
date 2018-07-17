@@ -24,7 +24,7 @@ void nfc_setup() {
 void nfc_task(void *pvParameter)
 {
   HardwareSerial Serial2(2);
-
+  
   PN532_HSU pn532hsu(Serial2);
   PN532 nfc(pn532hsu);
 
@@ -32,7 +32,7 @@ void nfc_task(void *pvParameter)
   nfc.begin();
   uint32_t versiondata = nfc.getFirmwareVersion();
   if (!versiondata) nfc_err = true;
-  
+
   // configure board to read RFID tags
   nfc.SAMConfig();
 
