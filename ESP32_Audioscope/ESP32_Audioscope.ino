@@ -32,12 +32,12 @@ void setup() {
   settings_load( keys );
 
   // Settings SET
-  settings_set("id", 1);
+  settings_set("id", 2);
   settings_set("gain", 80);
 
   // Wifi
   //wifi_static("192.168.0.237");
-  wifi_connect("101WIFI", "101internet");
+  wifi_connect("audioscope", "oyomiami");
   wifi_ota( "audioscope-" + String(settings_get("id")) + " v" + String(MP_VERSION, 2) );
   wifi_maxTry(3); // switch off wifi if no network found
 
@@ -76,6 +76,7 @@ void loop() {
   audio_run();
 
   motor_switch = (digitalRead(PIN_MOTOR) == LOW);
+  // motor_switch = true;
 
   // Stop all when motor stop
   if (!motor_switch && lastSeen > 0) {
