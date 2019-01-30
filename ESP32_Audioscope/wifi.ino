@@ -9,6 +9,8 @@ String wifi_nameDevice = "esp32";
 void (*wifi_conClbck)();
 byte wifi_maxRetry = 0;
 
+
+
 /*
  * Setup OTA
  */
@@ -54,12 +56,35 @@ void wifi_static(String ip) {
  */
 void wifi_connect(const char* ssid, const char* password) {
   WiFi.mode(WIFI_STA);
-  WiFi.onEvent(_wifi_event);
+
+  WiFi.onEvent([](WiFiEvent_t event, WiFiEventInfo_t info){
+    if (wifi_available) LOG("WIFI: disconnected");
+    wifi_available = false;
+    _wifi_disconnected();
+    wifi_retry += 1;
+
+    // Check max retry
+    if (wifi_maxRetry > 0 && wifi_retry > wifi_maxRetry) wifi_stop();
+    else {
+      LOGF("WIFI: reconnecting.. %i\n", wifi_retry);
+      WiFi.reconnect();
+    }
+  }, WiFiEvent_t::SYSTEM_EVENT_STA_DISCONNECTED);
+
+  WiFi.onEvent([](WiFiEvent_t event, WiFiEventInfo_t info){
+    wifi_retry = 0;
+    if (wifi_available) return;
+    wifi_available = true;
+    LOGINL("WIFI: connected = ");
+    LOG(WiFi.localIP());
+    _wifi_connected();
+  }, WiFiEvent_t::SYSTEM_EVENT_STA_GOT_IP);
+
   WiFi.begin(ssid, password);
 }
 
 /*
- * Set Callback triggered when connection 
+ * Set Callback triggered when connection
  * is (re-)established
  */
 void wifi_onConnect(void (*f)()) {
@@ -86,33 +111,6 @@ void _wifi_connected() {
  */
 void _wifi_disconnected() {
 
-}
-
-/*
- * Internal callback
- */
-void _wifi_event(WiFiEvent_t event) {
-  if (event == SYSTEM_EVENT_STA_DISCONNECTED) {
-    if (wifi_available) LOG("WIFI: disconnected");
-    wifi_available = false;
-    _wifi_disconnected();
-    wifi_retry += 1;
-
-    // Check max retry
-    if (wifi_maxRetry > 0 && wifi_retry > wifi_maxRetry) wifi_stop();
-    else {
-      LOGF("WIFI: reconnecting.. %i\n", wifi_retry);
-      WiFi.reconnect();
-    }
-  }
-  else if (event == SYSTEM_EVENT_STA_GOT_IP) {
-    wifi_retry = 0;
-    if (wifi_available) return;
-    wifi_available = true;   
-    LOGINL("WIFI: connected = ");
-    LOG(WiFi.localIP());
-    _wifi_connected();
-  }
 }
 
 /*
@@ -156,4 +154,3 @@ void wifi_stop() {
   WiFi.mode(WIFI_OFF);
   //btStop();
 }
-

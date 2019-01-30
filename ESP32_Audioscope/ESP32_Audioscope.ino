@@ -5,6 +5,11 @@
 #define MP_VERSION  0.51   // timeout RFID in ms instead of counter
 #define MP_VERSION  0.52   // pin led task to CPU0
 #define MP_VERSION  0.53   // pin led task to ISR
+#define MP_VERSION  1.00   // WAV recode
+#define MP_VERSION  1.01   // Change Gain & close led + no loop
+#define MP_VERSION  1.02   // no loop
+#define MP_VERSION  1.03   // gain again
+#define MP_VERSION  1.04   // fix loop
 
 #define PIN_MOTOR 15
 
@@ -32,8 +37,8 @@ void setup() {
   settings_load( keys );
 
   // Settings SET
-  settings_set("id", 2);
-  settings_set("gain", 80);
+  //settings_set("id", 2);
+  settings_set("gain", 30);
 
   // Wifi
   //wifi_static("192.168.0.237");
@@ -47,7 +52,7 @@ void setup() {
     delay(500);
     ESP.restart();
   }
-  audio_loop(true);
+  audio_loop(false);
 
   //Uart NFC
   nfc_setup();
@@ -72,7 +77,6 @@ void setup() {
 void loop() {
 
   wifi_loop();
-
   audio_run();
 
   motor_switch = (digitalRead(PIN_MOTOR) == LOW);
@@ -86,14 +90,14 @@ void loop() {
 
   // Check NFC
   if (nfc_available()) {
-    String media = nfc_get()+".mp3";
+    String media = "/"+nfc_get()+".wav";
 
-    // If motor is running
-    if (motor_switch) {      
-      if (audio_media() != "/"+media ) {
+    // If motor is running && media changed
+    if (motor_switch) {
+      if (audio_media() != media ) {
         if (audio_play(media)) led_start();
       }
-      
+
       LOGINL("Ping time: ");
       LOG((millis()-lastSeen));
       lastSeen = millis();
@@ -101,8 +105,8 @@ void loop() {
   }
 
   // Check RFID timeout
-  if (motor_switch && (audio_running() || led_running())) {
-    
+  if (motor_switch && audio_running()) {
+
     if ((millis() - lastSeen) > 2000) {
       LOGINL("No disc seen for a while: stop all: ");
       LOG((millis() - lastSeen));
@@ -110,18 +114,14 @@ void loop() {
     }
     //LOG(counter);
   }
-  
+
+  // Audio did end: stop leds !
+  if (led_running() && !audio_running()) led_stop();
+
 }
 
 void stop_all() {
-  if (audio_running()) audio_stop();
-  if (led_running()) led_stop();
+  audio_stop();
+  led_stop();
   lastSeen = 0;
 }
-
-
-
-
-
-
-
