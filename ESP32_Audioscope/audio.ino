@@ -1,9 +1,18 @@
 #include "AudioFileSourceSD.h"
-#include "AudioGeneratorMP3.h"
-#include "AudioOutputI2S.h"
+//#include "AudioFileSourcePROGMEM.h"
+//#include "viola.h"
 
-AudioGeneratorMP3 *mp3;
+//#include "AudioGeneratorMP3.h"
+#include "AudioGeneratorWAV.h"
+#include "AudioOutputI2S.h"
+#include <SD.h>
+
+//AudioGeneratorMP3 *gen;
+AudioGeneratorWAV *gen;
+
 AudioFileSourceSD *file;
+//AudioFileSourcePROGMEM *file;
+
 AudioOutputI2S *out;
 String audio_currentFile = "";
 bool audio_loopMedia = false;
@@ -18,6 +27,24 @@ bool audio_setup()
   } 
   else {
     LOG("SD card OK");
+
+    // List media
+    /*File dir = SD.open("/");
+    while (true) {
+      File entry =  dir.openNextFile();
+      if (! entry) {
+        // no more files
+        break;
+      }
+      LOGINL(entry.name());
+      if (!entry.isDirectory()) {
+        // files have sizes, directories do not
+        LOGINL("\t\t");
+        LOG(entry.size());
+      }
+      entry.close();
+    }*/
+    
     audio_sdOK = true;
   }
   
@@ -26,25 +53,30 @@ bool audio_setup()
   //out->SetRate(44100);
   out->SetGain( settings_get("gain") );  
 
-  mp3 = new AudioGeneratorMP3();
+  //gen = new AudioGeneratorMP3();
+  gen = new AudioGeneratorWAV();
 
-  audio_volume(100);
+  audio_volume(0);
   
   return audio_sdOK;
 }
 
 bool audio_play(String filePath) 
 {
-  if (mp3->isRunning()) audio_stop();
+  if (gen->isRunning()) audio_stop();
   if (filePath == "") return false;
 
   filePath = "/"+filePath;
-  
+  //filePath = "/marimba.wav";
+
+  if (gen->isRunning()) gen->stop();
   file = new AudioFileSourceSD(filePath.c_str());
-  if (mp3->begin(file, out)) {
+  //file = new AudioFileSourcePROGMEM( viola, sizeof(viola) );
+  if (gen->begin(file, out)) {
     audio_currentFile = filePath;
     audio_errorPlayer = "";
     LOG("play: "+filePath);
+    audio_volume(100);
     return true;
   }
   else {
@@ -57,9 +89,9 @@ bool audio_play(String filePath)
 
 void audio_stop() 
 {
-  if (!mp3->isRunning()) return;
-  mp3->stop();
-  file->close();
+  if (!gen->isRunning()) return;
+  audio_volume(0);
+  //gen->stop();
   audio_currentFile = "";
   audio_errorPlayer = "";
   LOG("stop");
@@ -80,9 +112,9 @@ void audio_loop(bool doLoop)
 
 bool audio_run()
 {
-  if (mp3->isRunning()) {
-    if (mp3->loop()) return true;
-    else if (audio_loopMedia && audio_currentFile != "") {
+  if (gen->isRunning()) {
+    if (gen->loop()) return true;                             // playback is still running
+    else if (audio_loopMedia && audio_currentFile != "") {    // file end: should i loop ?
       //audio_play(currentFile);
       file->seek(0,SEEK_SET);
       LOG("loop: "+audio_currentFile);
@@ -94,10 +126,9 @@ bool audio_run()
 }
 
 bool audio_running() {
-  return mp3->isRunning();
+  return gen->isRunning();
 }
 
 String audio_media(){
   return audio_currentFile;
 }
-

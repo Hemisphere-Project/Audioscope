@@ -5,6 +5,7 @@
 #define MP_VERSION  0.51   // timeout RFID in ms instead of counter
 #define MP_VERSION  0.52   // pin led task to CPU0
 #define MP_VERSION  0.53   // pin led task to ISR
+#define MP_VERSION  0.54   // wifi Event // WAV instead of MP3
 
 #define PIN_MOTOR 15
 
@@ -32,8 +33,8 @@ void setup() {
   settings_load( keys );
 
   // Settings SET
-  settings_set("id", 2);
-  settings_set("gain", 80);
+  //settings_set("id", 2);
+  //settings_set("gain", 80);
 
   // Wifi
   //wifi_static("192.168.0.237");
@@ -51,7 +52,7 @@ void setup() {
 
   //Uart NFC
   nfc_setup();
-  while(!nfc_running()) delay(10);
+  while (!nfc_running()) delay(10);
   if (nfc_error()) {
     LOG("No RFID detected.. restarting");
     delay(500);
@@ -84,33 +85,32 @@ void loop() {
     stop_all();
   }
 
-  // Check NFC
-  if (nfc_available()) {
-    String media = nfc_get()+".mp3";
+  // Check NFC &&  If motor is running
+  if (motor_switch && nfc_available()) {
+    String media = nfc_get() + ".wav";
 
-    // If motor is running
-    if (motor_switch) {      
-      if (audio_media() != "/"+media ) {
-        if (audio_play(media)) led_start();
-      }
-      
-      LOGINL("Ping time: ");
-      LOG((millis()-lastSeen));
-      lastSeen = millis();
+
+    if (audio_media() != "/" + media ) {
+      if (audio_play(media)) led_start();
     }
+
+    LOGINL("Ping time: ");
+    LOG((millis() - lastSeen));
+    lastSeen = millis();
+
   }
 
   // Check RFID timeout
   if (motor_switch && (audio_running() || led_running())) {
-    
-    if ((millis() - lastSeen) > 2000) {
+
+    if ((millis() - lastSeen) > 2000 && lastSeen != 0) {
       LOGINL("No disc seen for a while: stop all: ");
       LOG((millis() - lastSeen));
       stop_all();
     }
     //LOG(counter);
   }
-  
+
 }
 
 void stop_all() {
@@ -118,10 +118,3 @@ void stop_all() {
   if (led_running()) led_stop();
   lastSeen = 0;
 }
-
-
-
-
-
-
-

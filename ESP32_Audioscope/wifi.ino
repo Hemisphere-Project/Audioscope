@@ -10,8 +10,8 @@ void (*wifi_conClbck)();
 byte wifi_maxRetry = 0;
 
 /*
- * Setup OTA
- */
+   Setup OTA
+*/
 void wifi_ota(String nameDevice) {
   wifi_otaEnable = true;
   wifi_nameDevice = nameDevice;
@@ -26,73 +26,36 @@ void _wifi_otabegin() {
 }
 
 /*
- * Setup static WIFI
- */
+   Setup static WIFI
+*/
 void wifi_static(String ip, String gateway, String mask) {
-   IPAddress addrIP;
-   addrIP.fromString(ip);
-   IPAddress gateIP;
-   if (gateway == "auto") {
+  IPAddress addrIP;
+  addrIP.fromString(ip);
+  IPAddress gateIP;
+  if (gateway == "auto") {
     gateIP.fromString(ip);
     gateIP[3] = 1;
-   }
-   else gateIP.fromString(gateway);
-   IPAddress maskIP;
-   maskIP.fromString(mask);
-   WiFi.config(addrIP, gateIP, maskIP);
+  }
+  else gateIP.fromString(gateway);
+  IPAddress maskIP;
+  maskIP.fromString(mask);
+  WiFi.config(addrIP, gateIP, maskIP);
 }
 void wifi_static(String ip, String gateway) {
-   wifi_static(ip, gateway, "255.255.255.0");
+  wifi_static(ip, gateway, "255.255.255.0");
 }
 void wifi_static(String ip) {
-   wifi_static(ip, "auto");
+  wifi_static(ip, "auto");
 }
 
 
 /*
- * Connect as STATION
- */
+   Connect as STATION
+*/
 void wifi_connect(const char* ssid, const char* password) {
   WiFi.mode(WIFI_STA);
-  WiFi.onEvent(_wifi_event);
-  WiFi.begin(ssid, password);
-}
 
-/*
- * Set Callback triggered when connection 
- * is (re-)established
- */
-void wifi_onConnect(void (*f)()) {
-  wifi_conClbck = f;
-}
-
-/*
- * Get connection status
- */
-bool wifi_isok() {
-  return wifi_available;
-}
-
-/*
- * Internal callback
- */
-void _wifi_connected() {
-  _wifi_otabegin();
-  //(*wifi_conClbck)();
-}
-
-/*
- * Internal callback
- */
-void _wifi_disconnected() {
-
-}
-
-/*
- * Internal callback
- */
-void _wifi_event(WiFiEvent_t event) {
-  if (event == SYSTEM_EVENT_STA_DISCONNECTED) {
+  WiFiEventId_t eventID = WiFi.onEvent([](WiFiEvent_t event, WiFiEventInfo_t info) {
     if (wifi_available) LOG("WIFI: disconnected");
     wifi_available = false;
     _wifi_disconnected();
@@ -104,32 +67,67 @@ void _wifi_event(WiFiEvent_t event) {
       LOGF("WIFI: reconnecting.. %i\n", wifi_retry);
       WiFi.reconnect();
     }
-  }
-  else if (event == SYSTEM_EVENT_STA_GOT_IP) {
+  }, WiFiEvent_t::SYSTEM_EVENT_STA_DISCONNECTED);
+
+  WiFiEventId_t eventID2 = WiFi.onEvent([](WiFiEvent_t event, WiFiEventInfo_t info) {
     wifi_retry = 0;
     if (wifi_available) return;
-    wifi_available = true;   
+    wifi_available = true;
     LOGINL("WIFI: connected = ");
     LOG(WiFi.localIP());
     _wifi_connected();
-  }
+  }, WiFiEvent_t::SYSTEM_EVENT_STA_GOT_IP);
+
+
+  WiFi.begin(ssid, password);
 }
 
 /*
- * Wifi LOOP
- */
+   Set Callback triggered when connection
+   is (re-)established
+*/
+void wifi_onConnect(void (*f)()) {
+  wifi_conClbck = f;
+}
+
+/*
+   Get connection status
+*/
+bool wifi_isok() {
+  return wifi_available;
+}
+
+/*
+   Internal callback
+*/
+void _wifi_connected() {
+  _wifi_otabegin();
+  //(*wifi_conClbck)();
+}
+
+/*
+   Internal callback
+*/
+void _wifi_disconnected() {
+
+}
+
+
+/*
+   Wifi LOOP
+*/
 void wifi_loop() {
   // Run OTA
   if (wifi_otaEnable && wifi_available) ArduinoOTA.handle();
 }
 
 /*
- * Wait for wifi to be connected, or until timeout
- * Can trigger Restart on timeout
- */
+   Wait for wifi to be connected, or until timeout
+   Can trigger Restart on timeout
+*/
 void wifi_wait(int timeout, bool restart) {
   byte retries = 0;
-  while(retries < timeout/100) {
+  while (retries < timeout / 100) {
     if (wifi_available) return;
     retries += 1;
     delay(100);
@@ -142,18 +140,17 @@ void wifi_wait(int timeout, bool restart) {
 }
 
 /*
- * Disable wifi if no conn after x
- */
+   Disable wifi if no conn after x
+*/
 void wifi_maxTry(byte maxT) {
   wifi_maxRetry = maxT;
 }
 
 /*
- * Disable wifi
- */
+   Disable wifi
+*/
 void wifi_stop() {
   LOG("Stopping wifi...");
   WiFi.mode(WIFI_OFF);
   //btStop();
 }
-
