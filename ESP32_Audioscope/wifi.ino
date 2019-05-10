@@ -9,6 +9,8 @@ String wifi_nameDevice = "esp32";
 void (*wifi_conClbck)();
 byte wifi_maxRetry = 0;
 
+
+
 /*
    Setup OTA
 */
@@ -54,8 +56,7 @@ void wifi_static(String ip) {
 */
 void wifi_connect(const char* ssid, const char* password) {
   WiFi.mode(WIFI_STA);
-
-  WiFiEventId_t eventID = WiFi.onEvent([](WiFiEvent_t event, WiFiEventInfo_t info) {
+  WiFi.onEvent([](WiFiEvent_t event, WiFiEventInfo_t info){
     if (wifi_available) LOG("WIFI: disconnected");
     wifi_available = false;
     _wifi_disconnected();
@@ -69,7 +70,7 @@ void wifi_connect(const char* ssid, const char* password) {
     }
   }, WiFiEvent_t::SYSTEM_EVENT_STA_DISCONNECTED);
 
-  WiFiEventId_t eventID2 = WiFi.onEvent([](WiFiEvent_t event, WiFiEventInfo_t info) {
+  WiFi.onEvent([](WiFiEvent_t event, WiFiEventInfo_t info){
     wifi_retry = 0;
     if (wifi_available) return;
     wifi_available = true;
@@ -78,14 +79,13 @@ void wifi_connect(const char* ssid, const char* password) {
     _wifi_connected();
   }, WiFiEvent_t::SYSTEM_EVENT_STA_GOT_IP);
 
-
   WiFi.begin(ssid, password);
 }
 
 /*
-   Set Callback triggered when connection
-   is (re-)established
-*/
+ * Set Callback triggered when connection
+ * is (re-)established
+ */
 void wifi_onConnect(void (*f)()) {
   wifi_conClbck = f;
 }
@@ -112,10 +112,9 @@ void _wifi_disconnected() {
 
 }
 
-
 /*
-   Wifi LOOP
-*/
+ * Wifi LOOP
+ */
 void wifi_loop() {
   // Run OTA
   if (wifi_otaEnable && wifi_available) ArduinoOTA.handle();
